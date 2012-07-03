@@ -22,7 +22,7 @@ start_date = Date.new(1948, 2, 1)
 end_date = Date.new(1949, 2, 1)
 
 BEGINNNING_OF_YEAR = '1st feb'
-PARSED_BEGINNNING_OF_YEAR = Chronic.parse(BEGINNNING_OF_YEAR)
+PARSED_BEGINNNING_OF_YEAR = Chronic.parse(BEGINNNING_OF_YEAR, :now => start_date).to_date.advance(:years => -1)
 
 years = []
 quarters = []
@@ -95,7 +95,6 @@ def find_last_day(today, day)
 end
 
 
-
 beginning_of_usweek = find_last_sun(current_date)
 
 beginning_of_euweek = find_last_mon(current_date)
@@ -166,9 +165,6 @@ def get_beginning_of_quarter(date, beginning_of_year)
 
   beg_of_month = get_beginning_of_month(date, beginning_of_year)
 
-  m = beg_of_month
-
-
 
   while beg_of_month >= beg_of_year
 
@@ -185,16 +181,24 @@ end
 
 
 def get_beginning_of_year(date, beginning_of_year)
-
-  beg_of_year = Chronic.parse(beginning_of_year, :context => :past, :now => date).to_date
-
-  while beg_of_year > date
-
-    beg_of_year = beg_of_year.advance(:years => -1)
-
+  # binding.pry
+  beg_of_year = PARSED_BEGINNNING_OF_YEAR.advance(:years => -1)
+  while beg_of_year <= date
+  
+    beg_of_year = beg_of_year.advance(:years => 1)
+  
   end
-
-  beg_of_year
+  beg_of_year.advance(:years => -1)
+  # PARSED_BEGINNNING_OF_YEAR
+  # beg_of_year = Chronic.parse(beginning_of_year, :context => :past, :now => date).to_date
+  # 
+  # while beg_of_year > date
+  # 
+  #   beg_of_year = beg_of_year.advance(:years => -1)
+  # 
+  # end
+  # 
+  # beg_of_year
 
 end
 
@@ -280,44 +284,23 @@ while current_date <= end_date do
 
   end
 
-  
-
-  
-
-  
-
   # EU QUARTER
-
-  if get_beginning_of_quarter(next_thursday, BEGINNNING_OF_YEAR) != get_beginning_of_quarter(current_date, BEGINNNING_OF_YEAR) && (beginning_of_euweek == current_date) then
-
+  beginning_of_current_quarter = get_beginning_of_quarter(current_date, BEGINNNING_OF_YEAR)
+  if get_beginning_of_quarter(next_thursday, BEGINNNING_OF_YEAR) != beginning_of_current_quarter && (beginning_of_euweek == current_date) then
     quarter_for_euweek_changed = true
-
-  elsif get_beginning_of_quarter(last_thursday, BEGINNNING_OF_YEAR) != get_beginning_of_quarter(current_date, BEGINNNING_OF_YEAR) && (beginning_of_euweek == current_date) then
-
+  elsif get_beginning_of_quarter(last_thursday, BEGINNNING_OF_YEAR) != beginning_of_current_quarter && (beginning_of_euweek == current_date) then
     quarter_for_euweek_changed = true
-
   else
-
     quarter_for_euweek_changed = false
-
   end
 
-
-
   # US QUARTER
-
-  if get_beginning_of_quarter(next_saturday, BEGINNNING_OF_YEAR) != get_beginning_of_quarter(current_date, BEGINNNING_OF_YEAR) && (beginning_of_usweek == current_date) then
-
+  if get_beginning_of_quarter(next_saturday, BEGINNNING_OF_YEAR) != beginning_of_current_quarter && (beginning_of_usweek == current_date) then
     quarter_for_usweek_changed = true
-
-  elsif get_beginning_of_quarter(last_saturday, BEGINNNING_OF_YEAR) != get_beginning_of_quarter(current_date, BEGINNNING_OF_YEAR) && (beginning_of_usweek == current_date) then
-
+  elsif get_beginning_of_quarter(last_saturday, BEGINNNING_OF_YEAR) != beginning_of_current_quarter && (beginning_of_usweek == current_date) then
     quarter_for_usweek_changed = true
-
   else
-
     quarter_for_usweek_changed = false
-
   end
 
 
@@ -344,9 +327,11 @@ while current_date <= end_date do
 
   # For example if 1st of january of year X is on tuesday, 31st of december year Y is part of 1st week in X year
 
-  same_year_in_future = get_beginning_of_year(current_date, BEGINNNING_OF_YEAR).year == get_beginning_of_year(next_thursday, BEGINNNING_OF_YEAR).year
+  year_for_current_date = get_beginning_of_year(current_date, BEGINNNING_OF_YEAR).year
 
-  same_year_in_past = get_beginning_of_year(current_date, BEGINNNING_OF_YEAR).year == get_beginning_of_year(last_thursday, BEGINNNING_OF_YEAR).year
+  same_year_in_future = year_for_current_date == get_beginning_of_year(next_thursday, BEGINNNING_OF_YEAR).year
+
+  same_year_in_past = year_for_current_date == get_beginning_of_year(last_thursday, BEGINNNING_OF_YEAR).year
 
 
 
@@ -354,12 +339,9 @@ while current_date <= end_date do
 
   # Us weeks are usually different in that the belonging og the year is 
 
-  us_same_year_in_future = get_beginning_of_year(current_date, BEGINNNING_OF_YEAR).year == get_beginning_of_year(next_saturday, BEGINNNING_OF_YEAR).year
+  us_same_year_in_future = year_for_current_date == get_beginning_of_year(next_saturday, BEGINNNING_OF_YEAR).year
 
-  us_same_year_in_past = get_beginning_of_year(current_date, BEGINNNING_OF_YEAR).year == get_beginning_of_year(last_saturday, BEGINNNING_OF_YEAR).year
-
-
-
+  us_same_year_in_past = year_for_current_date == get_beginning_of_year(last_saturday, BEGINNNING_OF_YEAR).year
 
 
   if !us_same_year_in_future && (beginning_of_usweek == current_date) then
@@ -578,60 +560,32 @@ while current_date <= end_date do
 
     :current_date               => current_date,
 
-                                
-
     :day_id                     => day_id,
-
     :euweek_id                  => euweek_id + 1,
-
     :usweek_id                  => usweek_id + 1,
-
     :month_id                   => month_id + 1,
-
     :quarter_id                 => quarter_id + 1,
-
     :year_id                    => year_id,
 
-                                
-
     :day_of_week                => day_of_week.to_i,
-
     :day_of_euweek              => day_of_euweek.to_i,
-
     :day_of_month               => day_of_month.to_i,
-
     :day_of_quarter             => day_of_quarter.to_i,
-
     :day_of_year                => day_of_year.to_i,
 
-                                
-
     :week_of_year               => week_of_year.to_i,
-
     :usweek_of_year             => usweek_of_year.to_i,
-
     :euweek_of_quarter          => euweek_of_quarter.to_i,
-
     :usweek_of_quarter          => usweek_of_quarter.to_i,
-
     :week_of_month              => week_of_month.to_i,
 
-      
-
     :month_of_quarter           => month_of_quarter,
-
     :month_of_year              => month_of_year,
 
-    
-
     :quarter_of_year            => quarter_of_year,
-
     :quarter_of_year_for_week   => quarter_of_year_for_week,
-
     :quarter_of_year_for_usweek => quarter_of_year_for_usweek,
-
     :year_for_week              => year_for_week,
-
     :year_for_usweek            => year_for_usweek
 
   }
