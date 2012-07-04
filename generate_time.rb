@@ -132,8 +132,6 @@ def get_beginning_of_quarter(date)
   fail "Failed to find beginning of quarter"
 end
 
-
-
 def get_beginning_of_year(date)
   beg_of_year = PARSED_BEGINNNING_OF_YEAR.advance(:years => -1)
   while beg_of_year <= date
@@ -141,8 +139,6 @@ def get_beginning_of_year(date)
   end
   beg_of_year.advance(:years => -1)
 end
-
-
 
 def get_days_in_year(beginning_of_year)
   beginning = Date.new(beginning_of_year.year, PARSED_BEGINNNING_OF_YEAR.month, PARSED_BEGINNNING_OF_YEAR.day)
@@ -156,11 +152,14 @@ end
 puts Benchmark.measure {
 while current_date <= end_date do
 
+
   next_thursday = current_date.monday.advance :days => 3
   last_thursday = current_date.monday.advance :days => -4
 
-  next_saturday = current_date.monday.advance :days => 5
-  last_saturday = current_date.monday.advance :days => -2
+  # we need to get saturday next week
+  # so if it is saturday we have to get to next week 
+  next_saturday = current_date.advance(:days => 2).monday.advance :days => 5
+  last_saturday = current_date.advance(:days => 2).monday.advance :days => -2
 
   # WEEKS
   usweek_changed = current_date - beginning_of_usweek >= get_days_in_week(usweek_id)
@@ -201,8 +200,6 @@ while current_date <= end_date do
     quarter_for_usweek_changed = false
   end
 
-
-
   quarter_changed = current_date - beginning_of_quarter >= get_days_in_quarter(beginning_of_quarter)
   if quarter_changed
     beginning_of_quarter = current_date
@@ -214,145 +211,76 @@ while current_date <= end_date do
   # The idea here is that the EU weeks belong to the year based on in which year is thursday
   # For example if 1st of january of year X is on tuesday, 31st of december year Y is part of 1st week in X year
   year_for_current_date = get_beginning_of_year(current_date).year
-
   same_year_in_future = year_for_current_date == get_beginning_of_year(next_thursday).year
-
   same_year_in_past = year_for_current_date == get_beginning_of_year(last_thursday).year
 
-
-
   # US
-
   # Us weeks are usually different in that the belonging og the year is 
-
   us_same_year_in_future = year_for_current_date == get_beginning_of_year(next_saturday).year
-
   us_same_year_in_past = year_for_current_date == get_beginning_of_year(last_saturday).year
 
-
   if !us_same_year_in_future && (beginning_of_usweek == current_date) then
-
     year_for_usweek_changed = true
-
   elsif !us_same_year_in_past && (beginning_of_usweek == current_date) then
-
     year_for_usweek_changed = true
-
   else
-
     year_for_usweek_changed = false
-
   end
 
 
 
   if !same_year_in_future && (beginning_of_euweek == current_date) then
-
     year_for_week_changed = true
-
   elsif !same_year_in_past && (beginning_of_euweek == current_date) then
-
     year_for_week_changed = true
-
   else
 
-    year_for_week_changed = false
-
+  year_for_week_changed = false
   end
 
   year_changed = current_date - beginning_of_year >= get_days_in_year(beginning_of_year)
-
   if year_changed
-
     beginning_of_year = current_date
-
     year_id += 1
-
   end
-
-  
 
   ##########
-
   # RELATIVE
-
-  
-
   day_of_week     = current_date - beginning_of_usweek + 1
-
   day_of_euweek   = current_date - beginning_of_euweek + 1
-
   day_of_month    = current_date - beginning_of_month + 1
-
   day_of_quarter  = current_date - beginning_of_quarter + 1
-
   day_of_year     = current_date - beginning_of_year + 1
 
-  
-
   # EU WEEK IN YEAR
-
   if year_for_week_changed
-
     week_of_year = 1
-
     year_for_week =  year_for_week.nil? ? year_id : year_for_week += 1
-
   elsif euweek_changed
-
     week_of_year += 1
-
   end
-
-
 
   # US WEEK IN YEAR
-
   if year_for_usweek_changed
-
     usweek_of_year = 1
-
     year_for_usweek = year_for_usweek.nil? ? year_id : year_for_usweek += 1
-
   elsif usweek_changed
-
     usweek_of_year += 1
-
   end
-
-  
-
-
 
   # EU WEEK IN QUARTER
-
   if quarter_for_euweek_changed
-
     euweek_of_quarter = 1
-
   elsif euweek_changed
-
     euweek_of_quarter += 1
-
   end
-
-
 
   # US WEEK IN QUARTER
-
   if quarter_for_usweek_changed
-
     usweek_of_quarter = 1
-
   elsif usweek_changed
-
     usweek_of_quarter += 1
-
   end
-
-
-
-
 
   # EU WEEK IN MONTH
 
@@ -671,57 +599,30 @@ FasterCSV.open("table_data/chef_lu_day.csv", "w") do |csv|
     line = []
 
     line << day[:day_id]
-
     line << day[:day_of_euweek]
-
     line << day[:day_of_year]
-
     line << day[:quarter_of_year]
-
     line << day[:month_of_quarter]
-
     line << day[:month_of_year]
-
     line << day[:usweek_id]
-
     line << day[:euweek_id]
-
     line << day[:usweek_of_year]
-
     line << day[:day_of_week]
-
     line << day[:usweek_of_quarter]
-
     line << day[:euweek_of_quarter]
-
     line << day[:day_of_quarter]
-
     line << day[:month_id]
-
     line << day[:day_of_month]
-
     line << day[:year_id]
-
     line << day[:week_of_year]
-
     line << day[:quarter_id]
-
     # =====
-
     line << day[:current_date].strftime("%d/%m/%Y")
-
     line << day[:current_date].strftime("%Y-%m-%d")
-
     line << day[:current_date].strftime("%m/%d/%Y")
-
     line << day[:current_date].strftime("%d-%m-%Y")
-
     line << day[:current_date].strftime("%a, %b %d, %Y")
-
     line << day[:current_date].strftime("%_d/%_m/%y").gsub(" ", "")
-
-
-
     csv << line
 
   end
