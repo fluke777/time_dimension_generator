@@ -21,8 +21,7 @@ FileUtils::mkdir_p 'table_data'
 start_date = Date.new(1948, 2, 1) 
 end_date = Date.new(1949, 2, 1)
 
-BEGINNNING_OF_YEAR = '1st feb'
-PARSED_BEGINNNING_OF_YEAR = Chronic.parse(BEGINNNING_OF_YEAR, :now => start_date).to_date.advance(:years => -1)
+PARSED_BEGINNNING_OF_YEAR = start_date.advance(:years => -1)
 
 years = []
 quarters = []
@@ -83,221 +82,120 @@ end
 
 
 def find_last_day(today, day)
-
   while today.strftime("%a") != day do
-
     today = today.advance :days => -1
-
   end
-
   today
-
 end
 
-
 beginning_of_usweek = find_last_sun(current_date)
-
 beginning_of_euweek = find_last_mon(current_date)
-
 beginning_of_month = current_date
-
 beginning_of_quarter = current_date
-
 beginning_of_year = current_date
 
-
-
 first = true
-
-
-
-
 
 def get_days_in_week(week_of_month)
   7
 end
 
-
-
-def get_days_in_month(date, beginning_of_year)
-
-  beg_of_month = get_beginning_of_month(date, beginning_of_year)
-
+def get_days_in_month(date)
+  beg_of_month = get_beginning_of_month(date)
   beg_of_next_month = beg_of_month.advance(:months => 1)
-
   (beg_of_next_month - beg_of_month).to_i
-
 end
 
-
-
-def get_days_in_quarter(date, beginning_of_year)
-
-  beg_of_quarter = get_beginning_of_quarter(date, beginning_of_year)
-
+def get_days_in_quarter(date)
+  beg_of_quarter = get_beginning_of_quarter(date)
   end_of_next_quarter = beg_of_quarter.advance :months => 3
-
   (end_of_next_quarter - beg_of_quarter).to_i
-
 end
 
-
-
-def get_beginning_of_month(date, beginning_of_year)
-
-  beg_of_month = get_beginning_of_year(date, beginning_of_year)
-
+def get_beginning_of_month(date)
+  beg_of_month = get_beginning_of_year(date)
   while beg_of_month <= date
-
     beg_of_month = beg_of_month.advance :months => 1
-
   end
-
   beg_of_month.advance :months => -1
-
 end
 
-
-
-def get_beginning_of_quarter(date, beginning_of_year)
-
-  beg_of_year = get_beginning_of_year(date, beginning_of_year)
-
-  beg_of_month = get_beginning_of_month(date, beginning_of_year)
-
+def get_beginning_of_quarter(date)
+  beg_of_year = get_beginning_of_year(date)
+  beg_of_month = get_beginning_of_month(date)
 
   while beg_of_month >= beg_of_year
-
     return beg_of_month if ((beg_of_month.month - beg_of_year.month) % 3 == 0)
-
     beg_of_month = beg_of_month.advance(:months => -1)
-
   end
 
   fail "Failed to find beginning of quarter"
-
 end
 
 
 
-def get_beginning_of_year(date, beginning_of_year)
-  # binding.pry
+def get_beginning_of_year(date)
   beg_of_year = PARSED_BEGINNNING_OF_YEAR.advance(:years => -1)
   while beg_of_year <= date
-  
     beg_of_year = beg_of_year.advance(:years => 1)
-  
   end
   beg_of_year.advance(:years => -1)
-  # PARSED_BEGINNNING_OF_YEAR
-  # beg_of_year = Chronic.parse(beginning_of_year, :context => :past, :now => date).to_date
-  # 
-  # while beg_of_year > date
-  # 
-  #   beg_of_year = beg_of_year.advance(:years => -1)
-  # 
-  # end
-  # 
-  # beg_of_year
-
 end
 
 
 
 def get_days_in_year(beginning_of_year)
-
   beginning = Date.new(beginning_of_year.year, PARSED_BEGINNNING_OF_YEAR.month, PARSED_BEGINNNING_OF_YEAR.day)
-
   last_year_beginning = Date.new(beginning_of_year.year + 1, PARSED_BEGINNNING_OF_YEAR.month, PARSED_BEGINNNING_OF_YEAR.day)
-
   last_year_beginning - beginning
-
 end
 
-
-
-
-
 # pp [:year_id, :current_date, :day_id, :week_of_month, :month_id, :quarter_id, :quarter_of_year]
-
 # puts "============"
 
 puts Benchmark.measure {
 while current_date <= end_date do
 
+  next_thursday = current_date.monday.advance :days => 3
+  last_thursday = current_date.monday.advance :days => -4
 
-
-
-  next_thursday = Chronic.parse('next thursday', :now => current_date).to_date
-
-  last_thursday = Chronic.parse('last thursday', :now => current_date).to_date
-
-
-
-  next_saturday = Chronic.parse('next saturday', :now => current_date).to_date
-
-  last_saturday = Chronic.parse('last saturday', :now => current_date).to_date
-
-
+  next_saturday = current_date.monday.advance :days => 5
+  last_saturday = current_date.monday.advance :days => -2
 
   # WEEKS
-
   usweek_changed = current_date - beginning_of_usweek >= get_days_in_week(usweek_id)
-
   if usweek_changed
-
     beginning_of_usweek = current_date 
-
     usweek_id += 1
-
   end
-
-
-
-  
-
-
 
   euweek_changed = current_date - beginning_of_euweek >= get_days_in_week(euweek_id)
-
   if euweek_changed
-
     beginning_of_euweek = current_date 
-
     euweek_id += 1
-
   end
 
-
-
   # MONTH
-
-   
-
-  month_changed = current_date - beginning_of_month >= get_days_in_month(beginning_of_month, BEGINNNING_OF_YEAR)
-
+  month_changed = current_date - beginning_of_month >= get_days_in_month(beginning_of_month)
   if month_changed
-
     beginning_of_month = current_date
-
     month_id += 1
-
   end
 
   # EU QUARTER
-  beginning_of_current_quarter = get_beginning_of_quarter(current_date, BEGINNNING_OF_YEAR)
-  if get_beginning_of_quarter(next_thursday, BEGINNNING_OF_YEAR) != beginning_of_current_quarter && (beginning_of_euweek == current_date) then
+  beginning_of_current_quarter = get_beginning_of_quarter(current_date)
+  if get_beginning_of_quarter(next_thursday) != beginning_of_current_quarter && (beginning_of_euweek == current_date) then
     quarter_for_euweek_changed = true
-  elsif get_beginning_of_quarter(last_thursday, BEGINNNING_OF_YEAR) != beginning_of_current_quarter && (beginning_of_euweek == current_date) then
+  elsif get_beginning_of_quarter(last_thursday) != beginning_of_current_quarter && (beginning_of_euweek == current_date) then
     quarter_for_euweek_changed = true
   else
     quarter_for_euweek_changed = false
   end
 
   # US QUARTER
-  if get_beginning_of_quarter(next_saturday, BEGINNNING_OF_YEAR) != beginning_of_current_quarter && (beginning_of_usweek == current_date) then
+  if get_beginning_of_quarter(next_saturday) != beginning_of_current_quarter && (beginning_of_usweek == current_date) then
     quarter_for_usweek_changed = true
-  elsif get_beginning_of_quarter(last_saturday, BEGINNNING_OF_YEAR) != beginning_of_current_quarter && (beginning_of_usweek == current_date) then
+  elsif get_beginning_of_quarter(last_saturday) != beginning_of_current_quarter && (beginning_of_usweek == current_date) then
     quarter_for_usweek_changed = true
   else
     quarter_for_usweek_changed = false
@@ -305,33 +203,21 @@ while current_date <= end_date do
 
 
 
-  quarter_changed = current_date - beginning_of_quarter >= get_days_in_quarter(beginning_of_quarter, BEGINNNING_OF_YEAR)
-
+  quarter_changed = current_date - beginning_of_quarter >= get_days_in_quarter(beginning_of_quarter)
   if quarter_changed
-
     beginning_of_quarter = current_date
-
     quarter_id += 1
-
   end
 
-
-
-
-
   # YEAR
-
   # EU
-
   # The idea here is that the EU weeks belong to the year based on in which year is thursday
-
   # For example if 1st of january of year X is on tuesday, 31st of december year Y is part of 1st week in X year
+  year_for_current_date = get_beginning_of_year(current_date).year
 
-  year_for_current_date = get_beginning_of_year(current_date, BEGINNNING_OF_YEAR).year
+  same_year_in_future = year_for_current_date == get_beginning_of_year(next_thursday).year
 
-  same_year_in_future = year_for_current_date == get_beginning_of_year(next_thursday, BEGINNNING_OF_YEAR).year
-
-  same_year_in_past = year_for_current_date == get_beginning_of_year(last_thursday, BEGINNNING_OF_YEAR).year
+  same_year_in_past = year_for_current_date == get_beginning_of_year(last_thursday).year
 
 
 
@@ -339,9 +225,9 @@ while current_date <= end_date do
 
   # Us weeks are usually different in that the belonging og the year is 
 
-  us_same_year_in_future = year_for_current_date == get_beginning_of_year(next_saturday, BEGINNNING_OF_YEAR).year
+  us_same_year_in_future = year_for_current_date == get_beginning_of_year(next_saturday).year
 
-  us_same_year_in_past = year_for_current_date == get_beginning_of_year(last_saturday, BEGINNNING_OF_YEAR).year
+  us_same_year_in_past = year_for_current_date == get_beginning_of_year(last_saturday).year
 
 
   if !us_same_year_in_future && (beginning_of_usweek == current_date) then
@@ -678,7 +564,7 @@ end
 
 
 
-bulgarian_constant = get_beginning_of_year(Date.today, BEGINNNING_OF_YEAR).month - get_beginning_of_year(Date.today, BEGINNNING_OF_YEAR).beginning_of_year.month - 1
+bulgarian_constant = get_beginning_of_year(Date.today).month - get_beginning_of_year(Date.today).beginning_of_year.month - 1
 
 
 
@@ -960,7 +846,7 @@ end
 
 # MONTH IN YEAR
 
-month_index = Chronic.parse(BEGINNNING_OF_YEAR).month - Chronic.parse(BEGINNNING_OF_YEAR).beginning_of_year.month - 1
+month_index = PARSED_BEGINNNING_OF_YEAR.month - PARSED_BEGINNNING_OF_YEAR.beginning_of_year.month - 1
 
 save_as_csv(aggregate_on(:month_of_year, months), [:id, :descr_default, :desc_mq, :desc_num, :desc_us_long], "lookups/chef_lu_month_in_year.csv") do |day, csv|
 
